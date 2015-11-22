@@ -23,19 +23,29 @@ void handle_frame(uint32_t *frame)
         uint32_t g = ((bulb >>  8) & 0xff)*a/255;
         uint32_t b = ((bulb >>  0) & 0xff)*a/255;
 
-        strip[STRIP_LEN - i - 1] = (b) | (g<<8) | (r<<16);
+        strip[STRIP_LEN - i - 1] = (b) | (r<<8) | (g<<16);
     }
     ledscape_draw(leds, p);
 }
 
+
+int connected;
+
 void start_connection()
 {
-    struct lws *ws = lws_client_connect(ctx, "blinken.eecs.umich.edu", 80, 0, "/ws/stream", "blinken.eecs.umich.edu", "blinken", NULL, -1);
-
-    printf("connecting\n");
 
     while (1) {
-        lws_service(ctx, 1000);
+    	//struct lws *ws = lws_client_connect(ctx, "blinken.eecs.umich.edu", 80, 0, "/ws/stream", "blinken.eecs.umich.edu", "blinken", NULL, -1);
+    	struct lws *ws = lws_client_connect(ctx, "insecure.blinken.org", 80, 0, "/api/0/stream", "insecure.blinken.org", "blinken", NULL, -1);
+
+    	printf("connecting\n");
+        connected = 1;
+
+    	while (connected) {
+            lws_service(ctx, 1000);
+    	}
+
+	sleep(3);
     }
 }
 
@@ -51,6 +61,7 @@ callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 
     case LWS_CALLBACK_CLOSED:
         printf("dumb: LWS_CALLBACK_CLOSED\n");
+        connected = 0;
         break;
 
     case LWS_CALLBACK_CLIENT_RECEIVE:
@@ -62,6 +73,7 @@ callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 
     case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
         printf("dumb: LWS_CALLBACK_CLIENT_CONNECTION_ERROR\n");
+        connected = 0;
         break;
 
     default:
