@@ -17,10 +17,10 @@ void handle_frame(uint32_t *frame)
     for (i=0; i<STRIP_LEN; i++) {
         uint32_t bulb = ntohl(frame[i]);
         // brightness, red, green, blue
-        char a = (bulb >> 24) & 0xff;
-        char r = (bulb >> 16) & 0xff;
-        char g = (bulb >>  8) & 0xff;
-        char b = (bulb >>  0) & 0xff;
+        uint32_t a = (bulb >> 24) & 0xff;
+        uint32_t r = ((bulb >> 16) & 0xff)*a/255;
+        uint32_t g = ((bulb >>  8) & 0xff)*a/255;
+        uint32_t b = ((bulb >>  0) & 0xff)*a/255;
 
         strip[i] = (b) | (r<<8) | (g<<16);
     }
