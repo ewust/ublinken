@@ -81,15 +81,12 @@ main(
 	char ** argv
 )
 {
-	ledscape_config_t * config = &ledscape_matrix_default;
-	if (argc > 1)
-	{
-		config = ledscape_config(argv[1]);
-		if (!config)
-			return EXIT_FAILURE;
-	}
+	ledscape_config_t config;
+    config.type = LEDSCAPE_STRIP;
+    config.strip_config.leds_width = STRIP_LEN;
+    config.strip_config.leds_height = 1;
 
-	ledscape_t * const leds = ledscape_init(config, 0);
+	ledscape_t * const leds = ledscape_init((ledscape_config_t*)&config, 0);
     printf("configed\n");
 
 	time_t last_time = time(NULL);
