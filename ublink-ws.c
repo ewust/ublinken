@@ -22,7 +22,7 @@ void handle_frame(uint32_t *frame)
         uint32_t g = ((bulb >>  8) & 0xff)*a/255;
         uint32_t b = ((bulb >>  0) & 0xff)*a/255;
 
-        strip[i] = (b) | (r<<8) | (g<<16);
+        strip[STRIP_LEN - i - 1] = (b) | (g<<8) | (r<<16);
     }
     ledscape_draw(leds, p);
 }
