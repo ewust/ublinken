@@ -9,6 +9,7 @@
 ledscape_t *leds;   // for LEDscape
 uint32_t *p;        // DMA memory region
 uint32_t *strip;    // Just an offset into p (where our strand is)
+struct lws_context *ctx;
 
 
 void handle_frame(uint32_t *frame)
@@ -25,6 +26,17 @@ void handle_frame(uint32_t *frame)
         strip[STRIP_LEN - i - 1] = (b) | (g<<8) | (r<<16);
     }
     ledscape_draw(leds, p);
+}
+
+void start_connection()
+{
+    struct lws *ws = lws_client_connect(ctx, "blinken.eecs.umich.edu", 80, 0, "/ws/stream", "blinken.eecs.umich.edu", "blinken", NULL, -1);
+
+    printf("connecting\n");
+
+    while (1) {
+        lws_service(ctx, 1000);
+    }
 }
 
 static int
@@ -100,15 +112,7 @@ int main()
     info.protocols = protocols;
 
     printf("Hi\n");
-    struct lws_context *ctx = lws_create_context(&info);
-    printf("contexted %p\n", (void *)ctx);
+    ctx = lws_create_context(&info);
 
-    struct lws *ws = lws_client_connect(ctx, "blinken.eecs.umich.edu", 80, 0, "/ws/stream", "blinken.eecs.umich.edu", "blinken", NULL, -1);
-
-    printf("connecting\n");
-
-    while (1) {
-        lws_service(ctx, 1000);
-    }
-
+    start_connection();
 }
