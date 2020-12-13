@@ -5,6 +5,7 @@
 #include "ledscape.h"
 
 #define STRIP_LEN 100
+#define SCALE 20    // out of 100
 
 ledscape_t *leds;   // for LEDscape
 uint32_t *p;        // DMA memory region
@@ -18,10 +19,25 @@ void handle_frame(uint32_t *frame)
     for (i=0; i<STRIP_LEN; i++) {
         uint32_t bulb = ntohl(frame[i]);
         // brightness, red, green, blue
+        /*
         uint32_t a = (bulb >> 24) & 0xff;
         uint32_t r = ((bulb >> 16) & 0xff)*a/255;
         uint32_t g = ((bulb >>  8) & 0xff)*a/255;
         uint32_t b = ((bulb >>  0) & 0xff)*a/255;
+        */
+        uint32_t a = (bulb >> 24) & 0xff;
+        uint32_t r = (bulb >> 16) & 0xff;
+        uint32_t g = (bulb >>  8) & 0xff;
+        uint32_t b = (bulb >>  0) & 0xff;
+
+        //printf("i=0: r=%d, g=%d, b=%d, a=%d\n", r, g, b, a);
+        //r /= 3;
+        //g /= 3;
+        //b /= 3;
+
+        r = (r*SCALE)/100;
+        g = (g*SCALE)/100;
+        b = (b*SCALE)/100;
 
         strip[STRIP_LEN - i - 1] = (b) | (r<<8) | (g<<16);
     }
@@ -35,8 +51,9 @@ void start_connection()
 {
 
     while (1) {
-    	//struct lws *ws = lws_client_connect(ctx, "blinken.eecs.umich.edu", 80, 0, "/ws/stream", "blinken.eecs.umich.edu", "blinken", NULL, -1);
-    	struct lws *ws = lws_client_connect(ctx, "insecure.blinken.org", 80, 0, "/api/0/stream", "insecure.blinken.org", "blinken", NULL, -1);
+        //struct lws *ws = lws_client_connect(ctx, "blinken.eecs.umich.edu", 80, 0, "/ws/stream", "blinken.eecs.umich.edu", "blinken", NULL, -1);
+        //struct lws *ws = lws_client_connect(ctx, "insecure.blinken.org", 80, 0, "/api/0/stream", "insecure.blinken.org", "blinken", NULL, -1);
+        struct lws *ws = lws_client_connect(ctx, "insecure.blinken.ericw.us", 80, 0, "/api/0/stream", "insecure.blinken.ericw.us", "blinken", NULL, -1);
 
     	printf("connecting\n");
         connected = 1;
