@@ -97,11 +97,11 @@ callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
     switch (reason) {
 
     case LWS_CALLBACK_CLIENT_ESTABLISHED:
-        printf("dumb: LWS_CALLBACK_CLIENT_ESTABLISHED\n");
+        printf("LWS_CALLBACK_CLIENT_ESTABLISHED\n");
         break;
 
     case LWS_CALLBACK_CLOSED:
-        printf("dumb: LWS_CALLBACK_CLOSED\n");
+        printf("LWS_CALLBACK_CLOSED\n");
         connected = 0;
         break;
 
@@ -113,7 +113,7 @@ callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
     /* because we are protocols[0] ... */
 
     case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
-        printf("dumb: LWS_CALLBACK_CLIENT_CONNECTION_ERROR\n");
+        printf("LWS_CALLBACK_CLIENT_CONNECTION_ERROR\n");
         connected = 0;
         break;
 
@@ -138,7 +138,7 @@ static struct lws_protocols protocols[] = {
 int main()
 {
 
-    printf("initializing...\n");
+    printf("Init memory\n");
     strip = calloc(STRIP_LEN, sizeof(uint32_t));
     if (strip == NULL) {
         perror("calloc");
@@ -147,9 +147,11 @@ int main()
     memset(strip, 0x0, STRIP_LEN*4);
     //strip = &p[STRIP_LEN*1];    // GPIO2_1
 
-    printf("init ledpru\n");
+    printf("Init ledpru\n");
     ledpru_init();
 
+
+    printf("Init libwebsocket\n");
     //lws_set_log_level(LLL_ERR | LLL_USER | LLL_WARN | LLL_NOTICE | LLL_INFO | LLL_DEBUG, NULL);
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
@@ -160,7 +162,6 @@ int main()
     info.uid = -1;
     info.protocols = protocols;
 
-    printf("Hi\n");
     ctx = lws_create_context(&info);
 
     start_connection();
