@@ -8,6 +8,7 @@ done
 
 echo "PRU active"
 
+
 #echo 'stop' | sudo tee /sys/class/remoteproc/remoteproc1/state
 echo 'ledpru-fw' | sudo tee /sys/class/remoteproc/remoteproc1/firmware
 echo 'start' | sudo tee /sys/class/remoteproc/remoteproc1/state
@@ -15,4 +16,5 @@ echo 'start' | sudo tee /sys/class/remoteproc/remoteproc1/state
 config-pin p9_31 pruout
 
 cd /home/debian/ublinken
+./disable-leds.sh
 sudo ./ublink-ws
