@@ -2,20 +2,21 @@
 #include "libwebsockets.h"
 #include <unistd.h>
 #include <arpa/inet.h>
-#include "ledscape.h"
+#include "ledpru.h"
 
 #define STRIP_LEN 100
 #define SCALE 20    // out of 100
 
-ledscape_t *leds;   // for LEDscape
-uint32_t *p;        // DMA memory region
+//ledscape_t *leds;   // for LEDscape
+//uint32_t *p;        // DMA memory region
 uint32_t *strip;    // Just an offset into p (where our strand is)
 struct lws_context *ctx;
 
 
-void handle_frame(uint32_t *frame)
+void handle_frame(uint32_t *frame, size_t len)
 {
     int i;
+    printf("%u\n", len);
     for (i=0; i<STRIP_LEN; i++) {
         uint32_t bulb = ntohl(frame[i]);
         // brightness, red, green, blue
@@ -41,7 +42,9 @@ void handle_frame(uint32_t *frame)
 
         strip[STRIP_LEN - i - 1] = (b) | (r<<8) | (g<<16);
     }
-    ledscape_draw(leds, p);
+    printf("  going..\n");
+    ledpru_write_frame(strip, STRIP_LEN);
+    printf("  back.\n");
 }
 
 
@@ -50,12 +53,36 @@ int connected;
 void start_connection()
 {
 
+    struct lws_client_connect_info info;
+
+    memset(&info, 0, sizeof(info));
+    char *host = "blinken.ericw.us";
+    info.context    = ctx;
+    info.port       = 443;
+    info.address    = host;
+    info.path       = "/api/0/stream";
+    info.host       = host;
+    info.origin     = host;
+    info.ssl_connection = LCCSCF_USE_SSL;
+    info.protocol   = "minimal-client";
+    info.local_protocol_name = "minimal-client";
+    info.pwsi       = NULL;
+    info.retry_and_idle_policy = NULL;
+    info.userdata   = NULL;
+
+
     while (1) {
         //struct lws *ws = lws_client_connect(ctx, "blinken.eecs.umich.edu", 80, 0, "/ws/stream", "blinken.eecs.umich.edu", "blinken", NULL, -1);
         //struct lws *ws = lws_client_connect(ctx, "insecure.blinken.org", 80, 0, "/api/0/stream", "insecure.blinken.org", "blinken", NULL, -1);
-        struct lws *ws = lws_client_connect(ctx, "insecure.blinken.ericw.us", 80, 0, "/api/0/stream", "insecure.blinken.ericw.us", "blinken", NULL, -1);
+        //struct lws *ws = lws_client_connect(ctx, "insecure.blinken.ericw.us", 80, 0, "/api/0/stream", "insecure.blinken.ericw.us", "blinken", NULL, -1);
+        printf("connecting...\n");
+        if (!lws_client_connect_via_info(&info)) {
+            printf("lws_client_connect_via_info failed...\n");
+            sleep(3);
+            continue;
+        }
 
-    	printf("connecting\n");
+    	printf("connected\n");
         connected = 1;
 
     	while (connected) {
@@ -83,7 +110,7 @@ callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 
     case LWS_CALLBACK_CLIENT_RECEIVE:
         //((char *)in)[len] = '\0';
-        handle_frame((uint32_t*)in);
+        handle_frame((uint32_t*)in, len);
         break;
 
     /* because we are protocols[0] ... */
@@ -103,37 +130,33 @@ callback_ws(struct lws *wsi, enum lws_callback_reasons reason,
 
 static struct lws_protocols protocols[] = {
     {
-        "dumb-increment-protocol,fake-nonexistant-protocol",
+        "minimal-client",
         callback_ws,
         0,
-        400,
-        0,
-        NULL
+        0, //400,
     },
-    { NULL, NULL, 0, 0, 0, NULL} /* end */
+    { NULL, NULL, 0, 0,} /* end */
 };
 
 int main()
 {
 
     printf("initializing...\n");
-    p = calloc(STRIP_LEN*48, 4);
-    memset(p, 0x0, STRIP_LEN*48*4);
-    strip = &p[STRIP_LEN*1];    // GPIO2_1
+    strip = calloc(STRIP_LEN, sizeof(uint32_t));
+    if (strip == NULL) {
+        perror("calloc");
+        exit(-1);
+    }
+    memset(strip, 0x0, STRIP_LEN*4);
+    //strip = &p[STRIP_LEN*1];    // GPIO2_1
 
-    printf("ok...\n");
-    ledscape_config_t config;
-    config.type = LEDSCAPE_STRIP;
-    config.strip_config.leds_width = STRIP_LEN;
-    config.strip_config.leds_height = 1;
+    printf("init ledpru\n");
+    ledpru_init();
 
-    printf("hmm\n");
-    leds = ledscape_init((ledscape_config_t*)&config, 0);
-    printf("configured %p\n", leds);
-
-
+    //lws_set_log_level(LLL_ERR | LLL_USER | LLL_WARN | LLL_NOTICE | LLL_INFO | LLL_DEBUG, NULL);
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
+    info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
     info.port = CONTEXT_PORT_NO_LISTEN;
     info.iface = NULL;
     info.gid = -1;
