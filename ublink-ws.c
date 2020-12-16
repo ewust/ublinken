@@ -16,7 +16,6 @@ struct lws_context *ctx;
 void handle_frame(uint32_t *frame, size_t len)
 {
     int i;
-    printf("%u\n", len);
     for (i=0; i<STRIP_LEN; i++) {
         uint32_t bulb = ntohl(frame[i]);
         // brightness, red, green, blue
@@ -40,11 +39,9 @@ void handle_frame(uint32_t *frame, size_t len)
         g = (g*SCALE)/100;
         b = (b*SCALE)/100;
 
-        strip[STRIP_LEN - i - 1] = (b) | (r<<8) | (g<<16);
+        strip[STRIP_LEN - i - 1] = (b) | (r<<16) | (g<<8);
     }
-    printf("  going..\n");
     ledpru_write_frame(strip, STRIP_LEN);
-    printf("  back.\n");
 }
 
 
