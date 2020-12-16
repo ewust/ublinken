@@ -14,3 +14,6 @@ ublink-ws: ublink-ws.c
 
 ublink: ublinkmodule.c
 	$(CC) $(CFLAGS) -shared -I/usr/include/python2.7/ -lpython2.7 -fPIC -o ublink.so $^ $(LDFLAGS) -lledscape -lpthread -lm -lprussdrvd
+
+install:
+	ln -s $(shell pwd)/ublinken.service /etc/systemd/system/
